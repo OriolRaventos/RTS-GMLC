@@ -69,6 +69,8 @@ This folder contains six CSV files wit all RTS-GMLC (non-timeseries) data and pr
 | Start Time Warm Hr       | Transition time between hot and cold statuses after a shutdown |
 | Start Heat Cold MMBTU     | Heat required to startup from cold in million BTU per startup   |
 | Start Heat Hot MMBTU      | Heat required to startup from hot in million BTU per startup    |
+| Non Fuel Start Cost $    | Start up cost                                                    |
+| Non Fuel Shutdown Cost $ | Shut down cost                                                   |
 | FOR                      | Forced outage rate                                               |
 | MTTF Hr                  | Meant time to forced outage                                      |
 | MTTR Hr                  | Mean time to repair forced outage                                |
@@ -78,10 +80,12 @@ This folder contains six CSV files wit all RTS-GMLC (non-timeseries) data and pr
 | Output_pct_1             | Output point 1 on heat rate curve as a percentage of PMax        |
 | Output_pct_2             | Output point 2 on heat rate curve as a percentage of PMax        |
 | Output_pct_3             | Output point 3 on heat rate curve as a percentage of PMax        |
+| Output_pct_4             | Output point 4 (only for CSP) on heat rate curve as a percentage of PMax        |
 | HR_Avg_0                 | Average heat rate between 0 and output point 0 in BTU/kWh        |
 | HR_Incr_1                | Incremental heat rate between output points 0 and 1 in BTU/kWh   |
 | HR_Incr_2                | Incremental heat rate between output points 1 and 2 in BTU/kWh   |
 | HR_Incr_3                | Incremental heat rate between output points 2 and 3 (PMax) in BTU/kWh           |
+| HR_Incr_4                | Incremental heat rate between output points 3 and 4 (PMax) in BTU/kWh (only for CSP) |   
 | Fuel Sulfur Content %    | Fuel Sulfur Content                                              |
 | Emissions SO2 Lbs/MMBTU  | SO2 Emissions Rate                                               |
 | Emissions NOX Lbs/MMBTU  | NOX Emissions Rate                                               |

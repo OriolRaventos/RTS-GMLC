@@ -79,12 +79,16 @@ is copied to p_set and q_set before performing the AC power flow).
 
 - In general attributs of components not used by PyPSA are added for 
 completness as extra columns. Other attributes in PyPSA where not present in
-the source data mainly used the default value (compare [PyPSA Components](https://pypsa.readthedocs.io/en/latest/components.html) and [RTS-GMLC Source Data](https://github.com/GridMod/RTS-GMLC/tree/master/RTS_Data/SourceData)). More prominently:
+the source data mainly used the default value (compare [PyPSA Components](
+https://pypsa.readthedocs.io/en/latest/components.html) and [
+RTS-GMLC Source Data](
+https://github.com/GridMod/RTS-GMLC/tree/master/RTS_Data/SourceData)). More 
+prominently:
 
   - The control attribute for buses (PV, PQ or Slack).
   - The v_mag_pu_min and v_mag_pu_max for buses, not in the original data and 
   not used by PyPSA, although other simulators take 0.95 and 1.05 by default.
-  - The control attribute for generators is set PV for PV and wind and PQ for
+  - The control attribute for generators is set PV for Solar and Wind, and PQ for
   the rest.
   - The p_nom for generators is taken as teh PMax MW, hence p_max_pu is set to 1
   and p_min_pu is set to PMin MW / PMax MW.
@@ -96,7 +100,16 @@ the source data mainly used the default value (compare [PyPSA Components](https:
   RTS-GMLC.
   - PyPSA does not use an MVA base. The power units are assumed to be MW and 
   MVA.
-
+  - PyPSA uses a constant marginal cost, hence not using the data about
+  heat rate curve
+  - The investment costs are not included in the data, so the model is not
+  complete for an expansion planning optimization.
+  - The emissions in PyPSA are modeled per fuel (just CO2 by default), not at 
+  each generator, so we do not implement that (although only Oil has different
+  values for CT and Steam, and we could just take the maximum).
+  - Solar, Wind and Hydro are set as non-commitable.
+  - Synchronous converters are not modeled in PyPSA
+  - Reserves are not modeled.
 
 ## Copyright notice
 

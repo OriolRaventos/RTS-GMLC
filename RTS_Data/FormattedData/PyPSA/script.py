@@ -29,7 +29,7 @@ def create_buses(n, input_folder):
             control = buscontrol_dic[busdata.loc[i, "Bus Type"]])
         
         # Additional data not part of the PyPSA format
-        busadditional = ["Bus name", "Area", "Sub Area", "Zone", "V Angle", 
+        busadditional = ["Bus Name", "Area", "Sub Area", "Zone", "V Angle", 
             "MW Shunt G", "MVAR Shunt B"]
         for col in busadditional: 
             n.buses.loc[busdata.loc[i, "Bus ID"], col] = \
@@ -53,16 +53,29 @@ def create_loads(n, input_folder):
 def create_generators(n, input_folder):
     gendata = _read_csv(input_folder, "gen")
 
+    #storage is stored in a separate table
+    gendata.drop(gendata[gendata["Fuel"] == "Storage"].index, inplace = True)
+
+    #we do not model synchronous condensors
+    gendata.drop(gendata[gendata["Fuel"] == "Sync_Cond"].index, inplace = True)
+
     # dictionary for generator type
     gencontrol_dic = {}
     for c in gendata["Fuel"].unique():
-        if c in in ['Wind', 'Solar']:
+        if c in ['Wind', 'Solar']:
             gencontrol_dic[c] = "PV"
         else:
             gencontrol_dic[c] = "PQ"
-
+    
+    gencommitable_dic = {}
+    for c in gendata["Fuel"].unique():
+        if c in ['Wind', 'Solar', 'Hydro']:
+            gencommitable_dic[c] = False
+        else:
+            gencommitable_dic[c] = True
+    
     for i in gendata.index:
-        n.add("Generator", str(gendata.loc[i, "Gen ID"])
+        n.add("Generator", str(gendata.loc[i, "GEN UID"]),
             bus = gendata.loc[i, "Bus ID"],
             control = gencontrol_dic[gendata.loc[i, "Fuel"]],
             p_nom = gendata.loc[i, "PMax MW"], # NOTE: p_min_pu and p_max_pu 
@@ -75,16 +88,17 @@ def create_generators(n, input_folder):
             p_set = gendata.loc[i, "MW Inj"],
             q_set = gendata.loc[i, "MVAR Inj"],
             carrier = gendata.loc[i, "Fuel"],
-            marginal_cost = ,
-            marginal_cost_quadratic = ,
-            build_year = ,
-            lifetime = ,
-            capital_cost = ,
-            efficiency = ,
-            committable = ,
-            start_up_cost = ,
-            shut_down_cost = ,
-            stand_by_cost = ,
+            marginal_cost = gendata.loc[i, "Fuel Price $/MMBTU"] *\
+                gendata.loc[i, "HR_avg_0"] / 1000,
+            #marginal_cost_quadratic = ,
+            #build_year = ,
+            #lifetime = ,
+            #capital_cost = ,
+            #efficiency = ,
+            committable = gencommitable_dic[gendata.loc[i, "Fuel"]],
+            start_up_cost = gendata.loc[i, "Non Fuel Start Cost $"],
+            shut_down_cost = gendata.loc[i, "Non Fuel Shutdown Cost $"],
+            #stand_by_cost = ,
             min_up_time = gendata.loc[i, "Min Up Time Hr"],
             min_down_time = gendata.loc[i, "Min Down Time Hr"],
             #up_time_before = ,
@@ -94,56 +108,39 @@ def create_generators(n, input_folder):
             ramp_limit_start_up = gendata.loc[i, "Ramp Rate MW/Min"]*60,
             ramp_limit_shut_down = gendata.loc[i, "Ramp Rate MW/Min"]*60)
         
-        genadditional = ["GEN UID", "Unit Group", "Unit Type", "Category", 
-            "V Setpoint p.u.", "QMax MVAR", "QMin MVAR"]
+        genadditional = ["Gen ID", "Unit Group", "Unit Type", "Category", 
+            "V Setpoint p.u.", "QMax MVAR", "QMin MVAR", "Start Time Cold Hr",
+            "Start Time Warm Hr", "Start Time Hot Hr", "Start Heat Cold MBTU",
+            "Start Heat Warm MBTU", "Start Heat Hot MBTU", "FOR", "MTTF Hr",
+            "MTTR Hr", "Scheduled Maint Weeks", "Output_pct_0", "Output_pct_1",
+            "Output_pct_2", "Output_pct_3", "Output_pct_4", "HR_avg_0", 
+            "HR_incr_1", "HR_incr_2", "HR_incr_3", "HR_incr_4", "VOM",
+            "Fuel Sulfur Content %", "Emissions SO2 Lbs/MMBTU", 
+            "Emissions NOX Lbs/MMBTU", "Emissions Part Lbs/MMBTU", 
+            "Emissions CO2 Lbs/MMBTU", "Emissions CH4 Lbs/MMBTU",
+            "Emissions N2O Lbs/MMBTU", "Emissions CO Lbs/MMBTU",
+            "Emissions VOCs Lbs/MMBTU", "Damping Ratio", "Inertia MJ/MW",
+            "Base MVA", "Transformer X p.u.", "Unit X p.u.", "Pump Load MW",
+            "Storage Roundtrip Efficiency"]
         for col in genadditional:
-            n.generators.loc[gendata.loc[i, "Gen ID"], col] = \
+            #/ are not allowed as column names in netcdf and hcdf5
+            if "/" in col:
+                col2 = col.replace("/", " per ")
+            else:
+                col2 = col
+
+            n.generators.loc[gendata.loc[i, "GEN UID"], col2] = \
                 gendata.loc[i, col]
 
-
-        "Start Time Cold Hr"
-        "Start Time Warm Hr"
-        "Start Time Hot Hr"
-        "Start Heat Cold MBTU"
-        "Start Heat Warm MBTU"
-        "Start Heat Hot MBTU"
-        "Non Fuel Start Cost $"
-        "Non Fuel Shutdown Cost $"
-        "FOR"
-        "MTTF Hr"
-        "MTTR Hr"
-        "Scheduled Maint Weeks"
-        "Fuel Price $/MMBTU"
-        "Output_pct_0"
-        "Output_pct_1"
-        "Output_pct_2"
-        "Output_pct_3"
-        "Output_pct_4"
-        "HR_avg_0"
-        "HR_incr_1"
-        "HR_incr_2"
-        "HR_incr_3"
-        "HR_incr_4"
-        "VOM"
-        "Fuel Sulfur Content %"
-        "Emissions SO2 Lbs/MMBTU"
-        "Emissions NOX Lbs/MMBTU"
-        "Emissions Part Lbs/MMBTU"
-        "Emissions CO2 Lbs/MMBTU"
-        "Emissions CH4 Lbs/MMBTU"
-        "Emissions N2O Lbs/MMBTU"
-        "Emissions CO Lbs/MMBTU"
-        "Emissions VOCs Lbs/MMBTU"
-        "Damping Ratio"
-        "Inertia MJ/MW"
-        "Base MVA"
-        "Transformer X p.u."
-        "Unit X p.u."
-        "Pump Load MW"
-        "Storage Roundtrip Efficiency"
-
     n.generators.index = n.generators.index.astype(str)
-    
+
+def create_storage_units(n, input_folder):
+    gendata = _read_csv(input_folder, "gen")
+
+
+
+    n.storage_units.index = n.storage_units.index.astype(str)
+
 
 def create_pypsa_network(input_folder, output_format, output):
 
@@ -158,6 +155,13 @@ def create_pypsa_network(input_folder, output_format, output):
 
     # add generators
     create_generators(n, input_folder)
+
+    # add storage_units
+    #create_storage_units(n, input_folder)
+
+    # add lines
+
+    # add links (DC-lines)
 
 
     # export the network
