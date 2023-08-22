@@ -110,6 +110,7 @@ prominently:
   - Solar, Wind and Hydro are set as non-commitable.
   - Synchronous converters are not modeled in PyPSA
   - Reserves are not modeled.
+  - We set the storage marginal costs to 0. 
 
 ## Copyright notice
 

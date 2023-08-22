@@ -194,6 +194,10 @@ This folder contains six CSV files wit all RTS-GMLC (non-timeseries) data and pr
 | GEN UID         | Gen ID associated with storage                  |
 | Storage         | Storage object name                             |
 | Max Volume GWh  | Energy storage capacity                         |
+| Initial Volume GWh | Energy storage initial state of charge       |
+| Inflow Limit GWh| Inflow limit                                    |
+| Rating MVA      | Corresponding to PMax MW in the associated generator |
+| position        | Head by default. It can be tail for pumped storage |
 
 ## `reserves.csv`
 | Column              | Description                                     |

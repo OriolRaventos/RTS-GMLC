@@ -78,8 +78,8 @@ def create_generators(n, input_folder):
         n.add("Generator", str(gendata.loc[i, "GEN UID"]),
             bus = gendata.loc[i, "Bus ID"],
             control = gencontrol_dic[gendata.loc[i, "Fuel"]],
-            p_nom = gendata.loc[i, "PMax MW"], # NOTE: p_min_pu and p_max_pu 
-                #set accordingly
+            p_nom = gendata.loc[i, "PMax MW"],
+                # NOTE: p_min_pu and p_max_pu need to be set accordingly
             #p_nom_extendable = , # NOTE: Not extendable by default
             #p_nom_min = ,
             #p_nom_max = ,
@@ -136,11 +136,147 @@ def create_generators(n, input_folder):
 
 def create_storage_units(n, input_folder):
     gendata = _read_csv(input_folder, "gen")
+    storagedata = _read_csv(input_folder, "storage")
 
+    for i in storagedata.index:
+        igen =  gendata[gendata["GEN UID"] == storagedata.loc[i, "GEN UID"]].\
+            index[0]
+        print(igen)
 
+        n.add("StorageUnit", str(storagedata.loc[i, "Storage"]),
+            bus = gendata.loc[igen, "Bus ID"],
+            control = "PQ",
+            p_nom = gendata.loc[igen, "PMax MW"], # actually same as Rating MVA
+                # NOTE: p_min_pu and p_max_pu need to be set accordingly
+            #p_nom_extendable = , # NOTE: Not extendable by default
+            #p_nom_min = ,
+            #p_nom_max = ,
+            p_min_pu = gendata.loc[igen,
+                "PMin MW"]/gendata.loc[igen, "PMax MW"],
+            p_max_pu = 1,
+            carrier = gendata.loc[igen, "Fuel"],
+            marginal_cost = 0, # set storage costs to zero
+            #marginal_cost_quadratic = ,
+            #capital_cost = ,
+            #build_year = ,
+            #lifetime = ,
+            state_of_charge_initial = storagedata.loc[i,
+                "Initial Volume GWh"]/1000,
+            #state_of_charge_initial_per_period = ,
+            #state_of_charge_set = ,
+            cyclic_state_of_charge = False,
+            #cyclic_state_of_charge_per_period = ,
+            max_hours = storagedata.loc[i, "Max Volume GWh"] /\
+                (1000 * gendata.loc[igen, "PMax MW"]),
+            #efficiency_store = ,
+            #efficiency_dispatch = ,
+            #standing_loss = ,
+            inflow = storagedata.loc[i, "Inflow Limit GWh"]/1000)
+        
+        storageadditional = ["GEN UID", "Start Energy", "position"]
+        for col in storageadditional:
+            #/ are not allowed as column names in netcdf and hcdf5
+            if "/" in col:
+                col2 = col.replace("/", " per ")
+            else:
+                col2 = col
+
+            n.storage_units.loc[storagedata.loc[i, "GEN UID"], col2] = \
+                storagedata.loc[i, col]
 
     n.storage_units.index = n.storage_units.index.astype(str)
+'''
+def create_lines(n, input_folder):
+    branchdata = _read_csv(input_folder, "branch")
 
+name = ,
+bus0 = ,
+bus1 = ,
+type = ,
+x = ,
+r = ,
+g = ,
+b = ,
+s_nom = ,
+s_nom_extendable = ,
+s_nom_min = ,
+s_nom_max = ,
+s_max_pu = ,
+capital_cost = ,
+build_year = ,
+lifetime = ,
+length = ,
+carrier = ,
+terrain_factor = ,
+num_parallel = ,
+v_ang_min = ,
+v_ang_max = ,
+sub_network = ,
+p0 = ,
+q0 = ,
+p1 = ,
+q1 = ,
+x_pu = ,
+r_pu = ,
+g_pu = ,
+b_pu = ,
+x_pu_eff = ,
+r_pu_eff = ,
+s_nom_opt = ,
+mu_lower = ,
+mu_upper = ,
+
+
+    n.lines.index = n.lines.index.astype(str)
+
+def create_links(n, input_folder):
+    dc_branchdata = _read_csv(input_folder, "dc_branch")
+
+name = ,
+bus0 = ,
+bus1 = ,
+type = ,
+carrier = ,
+efficiency = ,
+build_year = ,
+lifetime = ,
+p_nom = ,
+p_nom_extendable = ,
+p_nom_min = ,
+p_nom_max = ,
+p_set = ,
+p_min_pu = ,
+p_max_pu = ,
+capital_cost = ,
+marginal_cost = ,
+marginal_cost_quadratic = ,
+stand_by_cost = ,
+length = ,
+terrain_factor = ,
+committable = ,
+start_up_cost = ,
+shut_down_cost = ,
+min_up_time = ,
+min_down_time = ,
+up_time_before = ,
+down_time_before = ,
+ramp_limit_up = ,
+ramp_limit_down = ,
+ramp_limit_start_up = ,
+ramp_limit_shut_down = ,
+p0 = ,
+p1 = ,
+p_nom_opt = ,
+status = ,
+mu_lower = ,
+mu_upper = ,
+mu_p_set = ,
+mu_ramp_limit_up = ,
+mu_ramp_limit_down = ,
+
+
+    n.links.index = n.links.index.astype(str)
+'''
 
 def create_pypsa_network(input_folder, output_format, output):
 
@@ -157,7 +293,7 @@ def create_pypsa_network(input_folder, output_format, output):
     create_generators(n, input_folder)
 
     # add storage_units
-    #create_storage_units(n, input_folder)
+    create_storage_units(n, input_folder)
 
     # add lines
 
