@@ -6,6 +6,8 @@ import pandas as pd
 
 import pypsa
 
+baseMVA = 100.
+
 def _read_csv(input_folder, table):
     return pd.read_csv(os.path.join(input_folder, table + ".csv"))
 
@@ -32,7 +34,7 @@ def create_buses(n, input_folder):
         busadditional = ["Bus Name", "Area", "Sub Area", "Zone", "V Angle", 
             "MW Shunt G", "MVAR Shunt B"]
         for col in busadditional: 
-            n.buses.loc[busdata.loc[i, "Bus ID"], col] = \
+            n.buses.loc[str(busdata.loc[i, "Bus ID"]), col] = \
                 busdata.loc[i, col]
     
     # Convert the index values into strings
@@ -49,6 +51,20 @@ def create_loads(n, input_folder):
             q_set = busdata.loc[i, "MVAR Load"])
     
     n.loads.index = n.loads.index.astype(str)
+
+def create_shunt_impedances(n, input_folder):
+    busdata = _read_csv(input_folder, "bus")
+    shuntdata = busdata[busdata[["MW Shunt G", "MVAR Shunt B"]].any(axis=1)]
+
+    for i in shuntdata.index:
+        n.add("ShuntImpedance", str(busdata.loc[i, "Bus ID"]),
+            bus = str(busdata.loc[i, "Bus ID"]),
+            g = busdata.loc[i, "MW Shunt G"] *\
+                busdata.loc[i, "BaseKV"]**2, # no need to rebase
+            b = busdata.loc[i, "MVAR Shunt B"]  *\
+                busdata.loc[i, "BaseKV"]**2, # no need to rebase
+            )
+    n.shunt_impedances.index = n.shunt_impedances.index.astype(str)
 
 def create_generators(n, input_folder):
     gendata = _read_csv(input_folder, "gen")
@@ -76,7 +92,7 @@ def create_generators(n, input_folder):
     
     for i in gendata.index:
         n.add("Generator", str(gendata.loc[i, "GEN UID"]),
-            bus = gendata.loc[i, "Bus ID"],
+            bus = str(gendata.loc[i, "Bus ID"]),
             control = gencontrol_dic[gendata.loc[i, "Fuel"]],
             p_nom = gendata.loc[i, "PMax MW"],
                 # NOTE: p_min_pu and p_max_pu need to be set accordingly
@@ -129,7 +145,7 @@ def create_generators(n, input_folder):
             else:
                 col2 = col
 
-            n.generators.loc[gendata.loc[i, "GEN UID"], col2] = \
+            n.generators.loc[str(gendata.loc[i, "GEN UID"]), col2] = \
                 gendata.loc[i, col]
 
     n.generators.index = n.generators.index.astype(str)
@@ -141,10 +157,9 @@ def create_storage_units(n, input_folder):
     for i in storagedata.index:
         igen =  gendata[gendata["GEN UID"] == storagedata.loc[i, "GEN UID"]].\
             index[0]
-        print(igen)
 
         n.add("StorageUnit", str(storagedata.loc[i, "Storage"]),
-            bus = gendata.loc[igen, "Bus ID"],
+            bus = str(gendata.loc[igen, "Bus ID"]),
             control = "PQ",
             p_nom = gendata.loc[igen, "PMax MW"], # actually same as Rating MVA
                 # NOTE: p_min_pu and p_max_pu need to be set accordingly
@@ -181,54 +196,115 @@ def create_storage_units(n, input_folder):
             else:
                 col2 = col
 
-            n.storage_units.loc[storagedata.loc[i, "GEN UID"], col2] = \
+            n.storage_units.loc[str(storagedata.loc[i, "Storage"]), col2] = \
                 storagedata.loc[i, col]
 
     n.storage_units.index = n.storage_units.index.astype(str)
-'''
+
 def create_lines(n, input_folder):
     branchdata = _read_csv(input_folder, "branch")
+    # drop the transformers
+    branchdata.drop(branchdata[branchdata["Tr Ratio"] != 0].index,
+        inplace= True)
+    busdata = _read_csv(input_folder, "bus")
+    
+    for i in branchdata.index:
+        ibus0 = busdata[busdata["Bus ID"] == branchdata.loc[i, "From Bus"]].\
+            index[0]
+        n.add("Line", str(branchdata.loc[i, "UID"]),
+            bus0 = str(branchdata.loc[i, "From Bus"]),
+            bus1 = str(branchdata.loc[i, "To Bus"]),
+            x = branchdata.loc[i, "X"] *\
+                ((busdata.loc[ibus0, "BaseKV"]**2)/ baseMVA),
+            r = branchdata.loc[i, "R"] *\
+                ((busdata.loc[ibus0, "BaseKV"]**2)/ baseMVA),
+            #g = ,
+            b = branchdata.loc[i, "B"] *
+                (baseMVA/(busdata.loc[ibus0, "BaseKV"]**2)),
+            s_nom = branchdata.loc[i, "Cont Rating"],
+            #s_nom_extendable = , # NOTE: Not extendable by default
+            #s_nom_min = ,
+            #s_nom_max = ,
+            #s_max_pu = ,
+            #capital_cost = ,
+            #build_year = ,
+            #lifetime = ,
+            length = branchdata.loc[i, "Length"],
+            carrier = "AC",
+            #terrain_factor = ,
+            #num_parallel = ,
+            #v_ang_min = ,
+            #v_ang_max = ,
+            )
 
-name = ,
-bus0 = ,
-bus1 = ,
-type = ,
-x = ,
-r = ,
-g = ,
-b = ,
-s_nom = ,
-s_nom_extendable = ,
-s_nom_min = ,
-s_nom_max = ,
-s_max_pu = ,
-capital_cost = ,
-build_year = ,
-lifetime = ,
-length = ,
-carrier = ,
-terrain_factor = ,
-num_parallel = ,
-v_ang_min = ,
-v_ang_max = ,
-sub_network = ,
-p0 = ,
-q0 = ,
-p1 = ,
-q1 = ,
-x_pu = ,
-r_pu = ,
-g_pu = ,
-b_pu = ,
-x_pu_eff = ,
-r_pu_eff = ,
-s_nom_opt = ,
-mu_lower = ,
-mu_upper = ,
+        branchadditional = ["LTE Rating", "STE Rating", "Perm OutRate", 
+            "Duration", "Tr Ratio", "Tran OutRate"]
+        for col in branchadditional:
+            #/ are not allowed as column names in netcdf and hcdf5
+            if "/" in col:
+                col2 = col.replace("/", " per ")
+            else:
+                col2 = col
 
+            n.lines.loc[str(branchdata.loc[i, "UID"]), col2] = \
+                branchdata.loc[i, col]
 
     n.lines.index = n.lines.index.astype(str)
 
+
+def create_transformers(n, input_folder):
+    branchdata = _read_csv(input_folder, "branch")
+    trafodata = branchdata.drop(branchdata[branchdata["Tr Ratio"] == 0].index)
+    busdata = _read_csv(input_folder, "bus")
+
+    for i in trafodata.index:
+        ibus0 = busdata[busdata["Bus ID"] == trafodata.loc[i, "From Bus"]].\
+            index[0]
+        ibus1 = busdata[busdata["Bus ID"] == trafodata.loc[i, "To Bus"]].\
+            index[0]
+        n.add("Transformer", str(trafodata.loc[i, "UID"]),
+            bus0 = str(trafodata.loc[i, "From Bus"]),
+            bus1 = str(trafodata.loc[i, "To Bus"]),
+            model = "pi", #since we follow MATPOWER rather than PowerFactory
+            x = trafodata.loc[i, "X"] *\
+                (trafodata.loc[i, "Cont Rating"]/ baseMVA),
+            r = trafodata.loc[i, "R"] *\
+                (trafodata.loc[i, "Cont Rating"]/ baseMVA),
+            #g = ,
+            b = trafodata.loc[i, "B"] *
+                (baseMVA/trafodata.loc[i, "Cont Rating"]),
+            s_nom = trafodata.loc[i, "Cont Rating"],
+            #s_nom_extendable = ,
+            #s_nom_min = ,
+            #s_nom_max = ,
+            #s_max_pu = ,
+            #capital_cost = ,
+            #num_parallel = ,
+            tap_ratio = trafodata.loc[i, "Tr Ratio"],
+            #tap_side = ,
+            #tap_position = ,
+            #phase_shift = , 
+            #build_year = .
+            #lifetime = ,
+            #v_ang_min = ,
+            #v_ang_max = ,
+            )
+
+        trafoadditional = ["LTE Rating", "STE Rating", "Perm OutRate", 
+            "Duration", "Tran OutRate", "Length"]
+        for col in trafoadditional:
+            #/ are not allowed as column names in netcdf and hcdf5
+            if "/" in col:
+                col2 = col.replace("/", " per ")
+            else:
+                col2 = col
+
+            n.transformers.loc[str(trafodata.loc[i, "UID"]), col2] = \
+                trafodata.loc[i, col]
+
+    n.transformers.index = n.transformers.index.astype(str)
+
+'''
 def create_links(n, input_folder):
     dc_branchdata = _read_csv(input_folder, "dc_branch")
 
@@ -279,7 +355,7 @@ mu_ramp_limit_down = ,
 '''
 
 def create_pypsa_network(input_folder, output_format, output):
-
+    
     # create an empty pypsa network
     n = pypsa.Network()
 
@@ -289,6 +365,9 @@ def create_pypsa_network(input_folder, output_format, output):
     # add loads
     create_loads(n, input_folder)
 
+    # add shunt impedances
+    create_shunt_impedances(n, input_folder)
+
     # add generators
     create_generators(n, input_folder)
 
@@ -296,9 +375,12 @@ def create_pypsa_network(input_folder, output_format, output):
     create_storage_units(n, input_folder)
 
     # add lines
+    create_lines(n, input_folder)
 
+    # add transformers
+    create_transformers(n, input_folder)
+    
     # add links (DC-lines)
-
 
     # export the network
     if output_format == "netcdf":
@@ -315,13 +397,13 @@ if __name__ == "__main__":
         help='input folder with RTS-GMLC source data. By default it assumes '\
         'working in the folder with the script.py in a cloned repository, '\
         'i.e. ../../SourceData/')
-    parser.add_argument('-output_format', type=str, default='netcdf',
+    parser.add_argument('-output_format', type=str, default='hdf5',
         choices = ['netcdf', 'hdf5', 'csv'],
         help='the format can be netcdf, hdf5 or csv')
     parser.add_argument('-output', type=str,
-        default='PyPSA_RTS-GMLC.nc',
+        default='PyPSA_RTS-GMLC.h5',
         help='output file name in case of netcdf format or folder name for '\
-        'csv format. The default is /PyPSA_RTS-GML.nc')
+        'csv format. The default is /PyPSA_RTS-GML.h5')
     args = parser.parse_args()
 
     create_pypsa_network(input_folder=args.input_folder, 

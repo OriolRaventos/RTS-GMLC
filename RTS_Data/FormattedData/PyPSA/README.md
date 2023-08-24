@@ -77,8 +77,14 @@ Hence, setting p_set and q_set for the generators is somehow unnatural, since
 this is the output of the DC optimal power flow (which is writen in p and q and 
 is copied to p_set and q_set before performing the AC power flow).
 
+- Mainly following the function in PyPSA importing from PyPower [import_from_pypower_ppc
+](https://github.com/PyPSA/PyPSA/blob/a0027f50a24744251e58ea6577f446bfdc90f1f6/
+pypsa/io.py#L993) and alos the implementation in PyPower and MATPOWER but adding 
+what is missing (e.g. AC-lines and storage units). Notice that PyPSA uses a 
+1 MVA base instead of the 100 MVA base in the data.
+
 - In general attributs of components not used by PyPSA are added for 
-completness as extra columns. Other attributes in PyPSA where not present in
+completness as extra columns. Other attributes in PyPSA were not present in
 the source data mainly used the default value (compare [PyPSA Components](
 https://pypsa.readthedocs.io/en/latest/components.html) and [
 RTS-GMLC Source Data](

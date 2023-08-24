@@ -2,6 +2,7 @@
 
 This folder contains six CSV files wit all RTS-GMLC (non-timeseries) data and problem formulation parameters, the contents of each file follow. Timeseries data can be found [here](https://github.com/GridMod/RTS-GMLC/tree/master/RTS_Data/timeseries_data_files).
 
+All per-unit (p.u.) quantities are on 100 MVA base [C. Grigg et al.](https://ieeexplore.ieee.org/abstract/document/780914)
 
 ## `bus.csv`
 
