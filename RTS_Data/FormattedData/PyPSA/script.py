@@ -59,9 +59,9 @@ def create_shunt_impedances(n, input_folder):
     for i in shuntdata.index:
         n.add("ShuntImpedance", str(busdata.loc[i, "Bus ID"]),
             bus = str(busdata.loc[i, "Bus ID"]),
-            g = busdata.loc[i, "MW Shunt G"] *\
+            g = - busdata.loc[i, "MW Shunt G"] /\
                 busdata.loc[i, "BaseKV"]**2, # no need to rebase
-            b = busdata.loc[i, "MVAR Shunt B"]  *\
+            b = - busdata.loc[i, "MVAR Shunt B"]  /\
                 busdata.loc[i, "BaseKV"]**2, # no need to rebase
             )
     n.shunt_impedances.index = n.shunt_impedances.index.astype(str)
@@ -255,13 +255,8 @@ def create_lines(n, input_folder):
 def create_transformers(n, input_folder):
     branchdata = _read_csv(input_folder, "branch")
     trafodata = branchdata.drop(branchdata[branchdata["Tr Ratio"] == 0].index)
-    busdata = _read_csv(input_folder, "bus")
 
     for i in trafodata.index:
-        ibus0 = busdata[busdata["Bus ID"] == trafodata.loc[i, "From Bus"]].\
-            index[0]
-        ibus1 = busdata[busdata["Bus ID"] == trafodata.loc[i, "To Bus"]].\
-            index[0]
         n.add("Transformer", str(trafodata.loc[i, "UID"]),
             bus0 = str(trafodata.loc[i, "From Bus"]),
             bus1 = str(trafodata.loc[i, "To Bus"]),
@@ -304,55 +299,75 @@ def create_transformers(n, input_folder):
 
     n.transformers.index = n.transformers.index.astype(str)
 
-'''
 def create_links(n, input_folder):
     dc_branchdata = _read_csv(input_folder, "dc_branch")
 
-name = ,
-bus0 = ,
-bus1 = ,
-type = ,
-carrier = ,
-efficiency = ,
-build_year = ,
-lifetime = ,
-p_nom = ,
-p_nom_extendable = ,
-p_nom_min = ,
-p_nom_max = ,
-p_set = ,
-p_min_pu = ,
-p_max_pu = ,
-capital_cost = ,
-marginal_cost = ,
-marginal_cost_quadratic = ,
-stand_by_cost = ,
-length = ,
-terrain_factor = ,
-committable = ,
-start_up_cost = ,
-shut_down_cost = ,
-min_up_time = ,
-min_down_time = ,
-up_time_before = ,
-down_time_before = ,
-ramp_limit_up = ,
-ramp_limit_down = ,
-ramp_limit_start_up = ,
-ramp_limit_shut_down = ,
-p0 = ,
-p1 = ,
-p_nom_opt = ,
-status = ,
-mu_lower = ,
-mu_upper = ,
-mu_p_set = ,
-mu_ramp_limit_up = ,
-mu_ramp_limit_down = ,
-
+    for i in dc_branchdata.index:
+        n.add("Link", str(dc_branchdata.loc[i, "UID"]),
+            bus0 = str(dc_branchdata.loc[i, "From Bus"]),
+            bus1 = str(dc_branchdata.loc[i, "To Bus"]),
+            carrier = "DC",
+            #efficiency = ,
+            #build_year = ,
+            #lifetime = ,
+            p_nom = dc_branchdata.loc[i, "MW Load"],
+            #p_nom_extendable = ,
+            #p_nom_min = ,
+            #p_nom_max = ,
+            #p_set = ,
+            p_min_pu = -1,
+            p_max_pu = 1,
+            #capital_cost = ,
+            #marginal_cost = ,
+            #marginal_cost_quadratic = ,
+            #stand_by_cost = ,
+            #length = ,
+            #terrain_factor = ,
+            #committable = ,
+            #start_up_cost = ,
+            #shut_down_cost = ,
+            #min_up_time = ,
+            #min_down_time = ,
+            #up_time_before = ,
+            #down_time_before = ,
+            #ramp_limit_up = ,
+            #ramp_limit_down = ,
+            #ramp_limit_start_up = ,
+            #ramp_limit_shut_down = ,
+            )
+    
+        dc_branchadditional = ['Control Mode', 'R Line', 'MW Load', 'V Mag kV',
+            'R Compound', 'Margin', 'Metered end', 'Line FOR Perm',
+            'Line FOR Trans', 'MTTR Line Hours', 'From Station FOR Active',
+            'From Station FOR Passive', 'From Station Scheduled Maint Rate',
+            'From Station Scheduled Maint Hours', 'From Switching Time Hours',
+            'To Station FOR Active', 'To Station FOR Passive',
+            'To Station Scheduled Maint Rate',
+            'To Station Scheduled Maint Dur Hours', 'To Switching Time Hours',
+            'Line Outage Prob 0', 'Line Outage Prob 1', 'Line Outage Prob 2',
+            'Line Outage Prob 3', 'Line Outage Rate 0', 'Line Outage Rate 1',
+            'Line Outage Rate 2', 'Line Outage Rate 3', 'Line Outage Dur 0',
+            'Line Outage Dur 1', 'Line Outage Dur 2', 'Line Outage Dur 3',
+            'Line Outage Loading 1', 'Line Outage Loading 2',
+            'Line Outage Loading 3', 'From Series Bridges',
+            'From Max Firing Angle', 'From Min Firing Angle',
+            'From R Commutating', 'From X Commutating', 'From baseKV',
+            'From Tr Ratio', 'From Tap Setpoint', 'From Tap Max',
+            'From Tap Min', 'From Tap Step', 'To Series Bridges',
+            'To Max Firing Angle', 'To Min Firing Angle', 'To R Commutating',
+            'To X Commutating', 'To baseKV', 'To Tr Ratio', 'To Tap Setpoint',
+            'To Tap Max', 'To Tap Min', 'To Tap Step']
+        for col in dc_branchadditional:
+            #/ are not allowed as column names in netcdf and hcdf5
+            if "/" in col:
+                col2 = col.replace("/", " per ")
+            else:
+                col2 = col
+            
+            n.links.loc[str(dc_branchdata.loc[i, "UID"]), col2] = \
+                dc_branchdata.loc[i, col]
 
     n.links.index = n.links.index.astype(str)
-'''
 
 def create_pypsa_network(input_folder, output_format, output):
     
@@ -381,6 +396,7 @@ def create_pypsa_network(input_folder, output_format, output):
     create_transformers(n, input_folder)
     
     # add links (DC-lines)
+    create_links(n, input_folder)
 
     # export the network
     if output_format == "netcdf":
